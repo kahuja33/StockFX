@@ -45,9 +45,10 @@ def get_stock_details(stock_code:str):
     #print(stock.latest_price.trade_date,stock.latest_price.close)
     #print("")
     #print(stock)
-
+    #print(f"{stock.company_name} has the latest stock price of {stock.latest_price.close} on {stock.latest_price.trade_date}")
     return stock.company_name,stock.latest_price.close,stock.latest_price.trade_date # type: ignore
-    
+
+#print(get_stock_details('INFY'))  
 #get_stock_details("RELIANCE")
 
 
@@ -65,10 +66,11 @@ def currency_conversion_rate(to_currency:str):
     
     """
     rate=exchange_rate
+    #print(rate)
     return rate[to_currency]
 
 
-#print(currency_conversion_rate('USD'))
+
 
 
 

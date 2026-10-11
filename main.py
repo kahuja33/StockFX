@@ -14,16 +14,6 @@ class StockDetails(BaseModel):
     to_currency: str = Field(description="The currency to which INR needs to be converted")
     exchange_rate: float = Field(description="The exchange rate from INR to the specified currency")
 
-"""
- ### the below function is not required
-
-
-def get_stock_details(stock_code : str):
-    price = {'INFY': 100, "TCS": 200, "Wipro": 300}
-    return price.get(stock_code,"stock code not found")
-"""
-
-
 my_tools = [
     {
         "type": "function",
@@ -58,45 +48,42 @@ my_tools = [
 ]
  
 
-#user_input = input("Ask the latest stock price of any NSE list company: ")
+user_input = input("Ask the latest stock price of any NSE list company: ")
 
+response = client.responses.create(model="gpt-5.6-sol",input=user_input,tools=my_tools) # type: ignore
+
+tool_mapping = {
+    "get_stock_details": get_stock_details,
+    "currency_conversion_rate": currency_conversion_rate
+}
 while True:
-    user_input = input("Ask for details of any NSE listed company stock price in INR and convert it to any other currency (or type 'exit' to quit): ")
-    if user_input.lower() == 'exit':
+    tool_output = []
+    llm_output = response.output
+    for item in llm_output:
+        if item.type == "function_call":
+            args = json.loads(item.arguments)
+            called_function = tool_mapping[item.name]
+            tool_result=called_function(**args)
+            tool_output.append({
+                "type": "function_call_output",
+                "call_id": item.call_id,
+                "output": str(tool_result)
+            })
+
+    if not tool_output:
         break
 
-    response = client.responses.create(model='gpt-5.6-sol', input=user_input, tools=my_tools) # pyright: ignore[reportArgumentType]
-    tool_output = []
-    for item in response.output:
-        if item.type != "function_call":
-            continue
+    # send tool results back and continue with the new response
+    response = client.responses.create(model="gpt-5.6-sol", input=tool_output, previous_response_id=response.id, tools=my_tools) # type: ignore
 
-        args = json.loads(item.arguments)
-        function_name = item.name
+response_pydantic = client.responses.parse(model='gpt-5.6-sol', input="Return the final details in the required structured format.", previous_response_id=response.id, tools=my_tools,text_format=StockDetails) # type: ignore
 
-        if function_name == 'get_stock_details':
-            result = get_stock_details(**args)
-        elif function_name == 'currency_conversion_rate':
-            result = currency_conversion_rate(**args)
-        else:
-            raise ValueError(f"Unknown function call requested: {function_name}")
-
-        tool_output.append({
-            "type": "function_call_output",
-            "call_id": item.call_id,
-            "output": str(result)
-        })
-
-    response_pydantic = client.responses.parse(model='gpt-5.6-sol', input=tool_output, previous_response_id=response.id, tools=my_tools,text_format=StockDetails) # type: ignore
-
-    result = response_pydantic.output_parsed
-    if result is None:
-        print("No structured output was parsed from the model response.")
-        print(response.output_text)
-        raise RuntimeError("Unable to parse the response into StockDetails.")
-
-    print(result)
-    print("")
+result = response_pydantic.output_parsed
+if result is None:
+    print("No structured output was parsed from the model response.")
+    print(response_pydantic.output_text)
+    raise RuntimeError("Unable to parse the response into StockDetails.")
+else:   
     print(f"The latest price of the stock code {result.stock_code} in INR is {result.price}, and when converted to {result.to_currency} using the exchange rate of {result.exchange_rate:.1f}, the price becomes {result.price * result.exchange_rate:.1f}.")
 
 
