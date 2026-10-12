@@ -50,7 +50,7 @@ my_tools = [
 
 user_input = input("Ask the latest stock price of any NSE list company: ")
 
-response = client.responses.create(model="gpt-5.6-sol",input=user_input,tools=my_tools) # type: ignore
+response = client.responses.create(model="gpt-5.6-luna",input=user_input,tools=my_tools) # type: ignore
 
 tool_mapping = {
     "get_stock_details": get_stock_details,
@@ -73,10 +73,9 @@ while True:
     if not tool_output:
         break
 
-    # send tool results back and continue with the new response
-    response = client.responses.create(model="gpt-5.6-sol", input=tool_output, previous_response_id=response.id, tools=my_tools) # type: ignore
-
-response_pydantic = client.responses.parse(model='gpt-5.6-sol', input="Return the final details in the required structured format.", previous_response_id=response.id, tools=my_tools,text_format=StockDetails) # type: ignore
+    # send tool results back and continue with the new response but commenting it for now as we are not running any loop for input text from user, we are just running a single input and getting the final output in structured format
+    response = client.responses.create(model="gpt-5.6-luna", input=tool_output, previous_response_id=response.id, tools=my_tools) # type: ignore  
+response_pydantic = client.responses.parse(model='gpt-5.6-luna', input="Return the final details in the required structured format.", previous_response_id=response.id, tools=my_tools,text_format=StockDetails) # type: ignore
 
 result = response_pydantic.output_parsed
 if result is None:
@@ -84,7 +83,7 @@ if result is None:
     print(response_pydantic.output_text)
     raise RuntimeError("Unable to parse the response into StockDetails.")
 else:   
-    print(f"The latest price of the stock code {result.stock_code} in INR is {result.price}, and when converted to {result.to_currency} using the exchange rate of {result.exchange_rate:.1f}, the price becomes {result.price * result.exchange_rate:.1f}.")
+    print(f"The latest price of the stock code {result.stock_code} in INR is {result.price}, and when converted to {result.to_currency} using the exchange rate of {result.exchange_rate:.3f}, the price becomes {result.price * result.exchange_rate:.1f}.")
 
 
 
