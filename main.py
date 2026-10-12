@@ -60,6 +60,8 @@ tool_mapping = {
     "get_stock_details": get_stock_details,
     "currency_conversion_rate": currency_conversion_rate
 }
+
+# The below generic code is used to handle the tool calls and responses from the model. It will keep calling the tools until there are no more tool calls in the model's response. The final output will be parsed into the StockResults format.
 while True:
     tool_output = []
     llm_output = response.output
