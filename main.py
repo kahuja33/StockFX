@@ -14,6 +14,7 @@ class StockDetails(BaseModel):
     to_currency: str = Field(description="The currency to which INR needs to be converted")
     exchange_rate: float = Field(description="The exchange rate from INR to the specified currency")
 
+# the StockResults class is used to define the structure of the final output that will be returned by the model. It contains a list of StockDetails objects, which represent the details of each stock requested by the user. Useful in the case of multiple stock codes being requested by the user in a single input.
 class StockResults(BaseModel):
     results: list[StockDetails] = Field(description="List of stock details for the requested stock codes.")
 
@@ -53,7 +54,7 @@ my_tools = [
 
 user_input = input("Ask the latest stock price of any NSE list company: ")
 
-response = client.responses.create(model="gpt-5.6-sol",input=user_input,tools=my_tools) # type: ignore
+response = client.responses.create(model="gpt-5.6-luna",input=user_input,tools=my_tools) # type: ignore
 
 tool_mapping = {
     "get_stock_details": get_stock_details,
@@ -77,10 +78,14 @@ while True:
         break
 
     # send tool results back and continue with the new response but commenting it for now as we are not running any loop for input text from user, we are just running a single input and getting the final output in structured format
-    response = client.responses.create(model="gpt-5.6-sol", input=tool_output, previous_response_id=response.id, tools=my_tools) # type: ignore  
-response_pydantic = client.responses.parse(model='gpt-5.6-sol', input="Return the final details in the required structured format.", previous_response_id=response.id, tools=my_tools,text_format=StockResults) # type: ignore
+    response = client.responses.create(model="gpt-5.6-luna", input=tool_output, previous_response_id=response.id, tools=my_tools) # type: ignore  
+response_pydantic = client.responses.parse(model='gpt-5.6-luna', input="Return the final details in the required structured format.", previous_response_id=response.id, tools=my_tools,text_format=StockResults) # type: ignore
 
 result = response_pydantic.output_parsed
+#print(result)
+#print("")
+#print(response.output_text)
+#print("")
 if result is None:
     print("No structured output was parsed from the model response.")
     print(response_pydantic.output_text)
